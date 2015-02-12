@@ -58,6 +58,7 @@ public class MyriadDriver {
         if(!Strings.isNullOrEmpty(cfg.getRole())){
             frameworkInfoBuilder.setRole(cfg.getRole());
         }
+        LOGGER.info("Checking for auths");
         if(!Strings.isNullOrEmpty(cfg.getPrincipal())){
             LOGGER.info("Attempting to use framework authentication");
             frameworkInfoBuilder.setPrincipal(cfg.getPrincipal());
