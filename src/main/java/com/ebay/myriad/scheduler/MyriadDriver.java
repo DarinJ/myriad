@@ -17,17 +17,26 @@ package com.ebay.myriad.scheduler;
 
 import com.ebay.myriad.configuration.MyriadConfiguration;
 import com.ebay.myriad.state.SchedulerState;
+import com.google.common.base.Strings;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.mesos.MesosSchedulerDriver;
+import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.FrameworkID;
 import org.apache.mesos.Protos.FrameworkInfo;
 import org.apache.mesos.Protos.FrameworkInfo.Builder;
 import org.apache.mesos.Protos.Status;
 import org.apache.mesos.Protos.TaskID;
+import org.apache.mesos.Protos.Credential;
+import org.apache.mesos.Protos.CredentialOrBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
 public class MyriadDriver {
@@ -38,11 +47,35 @@ public class MyriadDriver {
 
     @Inject
     public MyriadDriver(final MyriadScheduler scheduler,
-                        final MyriadConfiguration cfg, final SchedulerState schedulerState) {
+                        final MyriadConfiguration cfg, final SchedulerState schedulerState) throws IOException{
+        boolean passCrediential=false;
+        Credential.Builder  credentialBuilder=Credential.newBuilder();
+
         Builder frameworkInfoBuilder = FrameworkInfo.newBuilder().setUser("")
                 .setName(cfg.getFrameworkName())
                 .setCheckpoint(cfg.getCheckpoint())
                 .setFailoverTimeout(cfg.getFrameworkFailoverTimeout());
+        if(Strings.isNullOrEmpty(cfg.getRole())){
+            frameworkInfoBuilder.setRole(cfg.getRole());
+        }
+        if(!Strings.isNullOrEmpty(cfg.getPrincipal())){
+            frameworkInfoBuilder.setPrincipal(cfg.getPrincipal());
+            credentialBuilder.setPrincipal(cfg.getPrincipal());
+            if(!Strings.isNullOrEmpty(cfg.getSecretFile())) {
+                passCrediential=true;
+                try {
+                    //should we put the secret as a resource?
+                    FileInputStream f = new FileInputStream(new File(cfg.getSecretFile()));
+                    ByteString bytes=ByteString.readFrom(f);
+                    credentialBuilder.setSecret(bytes);
+                } catch ( IOException e) {
+                    throw new IOException("Error attempting to read "+ cfg.getSecretFile(), e);
+                }
+            }else{
+                throw new IOException("Error attempting to read "+ cfg.getSecretFile());
+            }
+
+        }
 
         FrameworkID frameworkId;
         try {
@@ -55,7 +88,11 @@ public class MyriadDriver {
             LOGGER.error("Error fetching frameworkId", e);
             throw new RuntimeException(e);
         }
-
+        if(passCrediential){
+        this.driver = new MesosSchedulerDriver(scheduler,frameworkInfoBuilder.build(),
+                cfg.getMesosMaster(),credentialBuilder.build());
+        }
+        else
         this.driver = new MesosSchedulerDriver(scheduler,
                 frameworkInfoBuilder.build(), cfg.getMesosMaster());
     }

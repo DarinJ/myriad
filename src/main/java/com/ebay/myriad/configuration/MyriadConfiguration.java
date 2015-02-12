@@ -43,6 +43,8 @@ public class MyriadConfiguration {
 
     public static final Integer DEFAULT_ZK_TIMEOUT = 20000;
 
+    public static final String DEFAULT_ROLE="";
+
     @JsonProperty
     private
     @NotEmpty
@@ -86,6 +88,15 @@ public class MyriadConfiguration {
     @NotEmpty
     private Map<String, String> yarnEnvironment;
 
+    @JsonProperty
+    private String role;
+
+    @JsonProperty
+    private String principal;
+
+    @JsonProperty
+    private String secretFile;
+
     public String getMesosMaster() {
         return mesosMaster;
     }
@@ -103,6 +114,12 @@ public class MyriadConfiguration {
         return Strings.isNullOrEmpty(this.frameworkName) ? DEFAULT_FRAMEWORK_NAME
                 : this.frameworkName;
     }
+
+    public String getRole() { return this.role; }
+
+    public String getPrincipal() { return this.principal; }
+
+    public String getSecretFile() { return this.secretFile; }
 
     public Map<String, Map<String, String>> getProfiles() {
         return profiles;

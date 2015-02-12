@@ -1,3 +1,6 @@
+#role: myriad
+#principal: principal
+#secretFile: /etc/hadoop/conf/myriad.secret
 mesosMaster: 10.0.2.15:5050
 checkpoint: false
 frameworkFailoverTimeout: 43200000
