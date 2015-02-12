@@ -61,8 +61,8 @@ public class MyriadDriver {
         if(!Strings.isNullOrEmpty(cfg.getPrincipal())){
             frameworkInfoBuilder.setPrincipal(cfg.getPrincipal());
             credentialBuilder.setPrincipal(cfg.getPrincipal());
+            passCrediential=true;  //Curious if we should pass a credential with no secret?
             if(!Strings.isNullOrEmpty(cfg.getSecretFile())) {
-                passCrediential=true;
                 try {
                     //should we put the secret as a resource?
                     FileInputStream f = new FileInputStream(new File(cfg.getSecretFile()));
@@ -72,12 +72,18 @@ public class MyriadDriver {
                     throw new IOException("Error attempting to read "+ cfg.getSecretFile(), e);
                 }
             }else{
-                throw new IOException("Error attempting to read "+ cfg.getSecretFile());
+                throw new IOException("Error no sequence file specified ");
+                //or
+                //LOGGER.info("No secret file specified using blank secret");
+                //credentialBuilder.setSecret("".getBytes());
+                //or
+                //LOGGER.info("No secret file specified using not passing any credentials");
+                //passCrediential=false;
             }
 
         }
-
-        FrameworkID frameworkId;
+        
+        FrameworkID frameworkId;    
         try {
             frameworkId = schedulerState.getMyriadState().getFrameworkID();
             if (frameworkId != null) {

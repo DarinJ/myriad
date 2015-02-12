@@ -45,6 +45,9 @@ public class MyriadConfiguration {
 
     public static final String DEFAULT_ROLE="";
 
+    public static final String DEFAULT_SECRET_FILE="";
+
+    public static final String DEFAULT_PRINIPAL="";
     @JsonProperty
     private
     @NotEmpty
