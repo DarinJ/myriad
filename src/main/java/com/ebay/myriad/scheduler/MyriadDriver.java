@@ -72,7 +72,7 @@ public class MyriadDriver {
                     throw new IOException("Error attempting to read "+ cfg.getSecretFile(), e);
                 }
             }else{
-                throw new IOException("Error no sequence file specified ");
+                throw new IOException("Error no secret file specified ");
                 //or
                 //LOGGER.info("No secret file specified using blank secret");
                 //credentialBuilder.setSecret("".getBytes());
