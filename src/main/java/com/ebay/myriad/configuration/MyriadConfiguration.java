@@ -45,9 +45,11 @@ public class MyriadConfiguration {
 
     public static final String DEFAULT_ROLE="";
 
+    public static final String DEFAULT_PRINCIPAL="";
+
     public static final String DEFAULT_SECRET_FILE="";
 
-    public static final String DEFAULT_PRINIPAL="";
+    
     @JsonProperty
     private
     @NotEmpty
@@ -118,11 +120,11 @@ public class MyriadConfiguration {
                 : this.frameworkName;
     }
 
-    public String getRole() { return this.role; }
+    public String getRole() { return Strings.isNullOrEmpty(this.role) ? this.role : DEFAULT_ROLE; }
 
-    public String getPrincipal() { return this.principal; }
+    public String getPrincipal() { return Strings.isNullOrEmpty(this.principal) ? this.principal : DEFAULT_PRINCIPAL; }
 
-    public String getSecretFile() { return this.secretFile; }
+    public String getSecretFile() { return Strings.isNullOrEmpty(this.secretFile) ? this.secretFile : DEFAULT_SECRET_FILE; }
 
     public Map<String, Map<String, String>> getProfiles() {
         return profiles;

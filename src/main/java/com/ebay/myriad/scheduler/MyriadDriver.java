@@ -55,7 +55,7 @@ public class MyriadDriver {
                 .setName(cfg.getFrameworkName())
                 .setCheckpoint(cfg.getCheckpoint())
                 .setFailoverTimeout(cfg.getFrameworkFailoverTimeout());
-        if(Strings.isNullOrEmpty(cfg.getRole())){
+        if(!Strings.isNullOrEmpty(cfg.getRole())){
             frameworkInfoBuilder.setRole(cfg.getRole());
         }
         if(!Strings.isNullOrEmpty(cfg.getPrincipal())){
