@@ -59,15 +59,20 @@ public class MyriadDriver {
             frameworkInfoBuilder.setRole(cfg.getRole());
         }
         if(!Strings.isNullOrEmpty(cfg.getPrincipal())){
+            LOGGER.info("Attempting to use framework authentication");
             frameworkInfoBuilder.setPrincipal(cfg.getPrincipal());
             credentialBuilder.setPrincipal(cfg.getPrincipal());
             passCrediential=true;  //Curious if we should pass a credential with no secret?
             if(!Strings.isNullOrEmpty(cfg.getSecretFile())) {
+                LOGGER.info("Using secrets file:" + cfg.getSecretFile());
                 try {
                     //should we put the secret as a resource?
                     FileInputStream f = new FileInputStream(new File(cfg.getSecretFile()));
                     ByteString bytes=ByteString.readFrom(f);
                     credentialBuilder.setSecret(bytes);
+                    LOGGER.info("Using secret is:" + new String(bytes.toByteArray()));
+                    
+
                 } catch ( IOException e) {
                     throw new IOException("Error attempting to read "+ cfg.getSecretFile(), e);
                 }
