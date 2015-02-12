@@ -100,12 +100,18 @@ public class MyriadDriver {
             throw new RuntimeException(e);
         }
         if(passCrediential){
+            LOGGER.info("Passing Credentials");
+
         this.driver = new MesosSchedulerDriver(scheduler,frameworkInfoBuilder.build(),
                 cfg.getMesosMaster(),credentialBuilder.build());
+            
         }
-        else
-        this.driver = new MesosSchedulerDriver(scheduler,
-                frameworkInfoBuilder.build(), cfg.getMesosMaster());
+        else {
+            LOGGER.info("Not Passing Credentials");
+
+            this.driver = new MesosSchedulerDriver(scheduler,
+                    frameworkInfoBuilder.build(), cfg.getMesosMaster());
+        }
     }
 
     public Status start() {
