@@ -18,6 +18,15 @@ public class MyriadExecutorConfiguration {
     @NotEmpty
     private String path;
 
+    @JsonProperty
+    private String nodeManagerUri;
+
+    @JsonProperty
+    private String command;
+
+    @JsonProperty
+    private Boolean remoteDistribution;
+
     public Optional<Double> getJvmMaxMemoryMB() {
         return Optional.fromNullable(jvmMaxMemoryMB);
     }
@@ -25,4 +34,17 @@ public class MyriadExecutorConfiguration {
     public String getPath() {
         return path;
     }
+
+    public Optional<String> getNodeManagerUri() {
+        return Optional.fromNullable(nodeManagerUri);
+    }
+
+    public Optional<String> getCommand() {
+        return Optional.fromNullable(command);
+    }
+
+    public boolean isRemoteDistribution() {
+        return remoteDistribution != null ? remoteDistribution : false;
+    }
+
 }

@@ -4,14 +4,7 @@ import com.google.gson.Gson;
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
-import org.apache.mesos.Protos.ExecutorInfo;
-import org.apache.mesos.Protos.FrameworkInfo;
-import org.apache.mesos.Protos.SlaveInfo;
-import org.apache.mesos.Protos.Status;
-import org.apache.mesos.Protos.TaskID;
-import org.apache.mesos.Protos.TaskInfo;
-import org.apache.mesos.Protos.TaskState;
-import org.apache.mesos.Protos.TaskStatus;
+import org.apache.mesos.Protos.*;
 import org.apache.mesos.Protos.TaskStatus.Builder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -150,8 +143,27 @@ public class MyriadExecutor implements Executor {
         driver.sendStatusUpdate(status);
     }
 
+    private ProcessBuilder buildChangeOwnerShipProcessBuilder(NMTaskConfig taskConfig) {
+        String dir = taskConfig.getYarnEnvironment().get("YARN_HOME");
+        ProcessBuilder setSuid = new ProcessBuilder("chown -R",
+                taskConfig.getUser() + ":" + taskConfig.getGroup(),
+                dir);
+        setSuid.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+        setSuid.redirectError(ProcessBuilder.Redirect.INHERIT);
+        return setSuid;
+    }
+
+    private ProcessBuilder buildSetPemissionsProcessBuilder(NMTaskConfig taskConfig) {
+        String dir = taskConfig.getYarnEnvironment().get("YARN_HOME");
+        ProcessBuilder setSuid = new ProcessBuilder("chmod", "g+rs", dir + "/bin/container-executor");
+        setSuid.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+        setSuid.redirectError(ProcessBuilder.Redirect.INHERIT);
+        return setSuid;
+    }
+    
     private ProcessBuilder buildProcessBuilder(TaskInfo task, NMTaskConfig taskConfig) {
-        ProcessBuilder processBuilder = new ProcessBuilder("sudo", "-E", "-u", taskConfig.getUser(), "-H", "bash", "-c", "$YARN_HOME/bin/yarn nodemanager");
+        ProcessBuilder processBuilder = new ProcessBuilder("sudo", "-E", "-u", taskConfig.getUser(), "-H",
+                "bash", "-c", "$YARN_HOME/bin/yarn nodemanager");
 
         Map<String, String> environment = processBuilder.environment();
 
