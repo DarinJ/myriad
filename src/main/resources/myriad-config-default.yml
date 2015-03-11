@@ -27,8 +27,8 @@ nodemanager:
 executor:
   jvmMaxMemoryMB: 256
   path: file://localhost/usr/local/libexec/mesos/myriad-executor-0.0.1.jar
-  #remoteDistribution: true
-  #nodeManagerUri: hdfs://namenode:port/dist/nodemanager.tgz
-  #command: myriad-executor-0.0.1.jar
+  remoteDistribution: true
+  nodeManagerUri: file:///opt/hadoop-2.5.0-cdh5.2.0.tar.gz
+  command: myriad-executor-0.0.1.jar
 yarnEnvironment:
-  YARN_HOME: /usr/local/hadoop #this should be relative if remoteDistribution is set to true
+  YARN_HOME: hadoop-2.5.0-cdh5.2.0 #this should be relative if remoteDistribution is set to true

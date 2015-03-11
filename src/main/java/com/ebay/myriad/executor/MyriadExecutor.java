@@ -79,6 +79,8 @@ public class MyriadExecutor implements Executor {
 
     private Process process;
 
+    private boolean permisionsSet = false;
+
     public static void main(String[] args) throws Exception {
         LOGGER.info("Starting MyriadExecutor...");
         MesosExecutorDriver driver = new MesosExecutorDriver(new MyriadExecutor());
@@ -112,16 +114,22 @@ public class MyriadExecutor implements Executor {
                         .setTaskId(task.getTaskId());
                 try {
                     NMTaskConfig taskConfig = GSON.fromJson(task.getData().toStringUtf8(), NMTaskConfig.class);
-                    LOGGER.info("TaskConfig: ", taskConfig);
-                    ProcessBuilder processBuilder = buildProcessBuilder(task, taskConfig);
-                    MyriadExecutor.this.process = processBuilder.start();
-
-                    int waitFor = MyriadExecutor.this.process.waitFor();
-
-                    if (waitFor == 0) {
-                        statusBuilder.setState(TaskState.TASK_FINISHED);
-                    } else {
+                    if (!permisionsSet && taskConfig.getRemoteDistribution() && !setPermissions(taskConfig)) {
+                        LOGGER.info("Trying to use remote URI but can't set permissions, " +
+                                "executorUser must be root or have passwordless sudo setup. ");
                         statusBuilder.setState(TaskState.TASK_FAILED);
+                    } else {
+                        LOGGER.info("TaskConfig: ", taskConfig);
+                        ProcessBuilder processBuilder = buildProcessBuilder(task, taskConfig);
+                        MyriadExecutor.this.process = processBuilder.start();
+
+                        int waitFor = MyriadExecutor.this.process.waitFor();
+
+                        if (waitFor == 0) {
+                            statusBuilder.setState(TaskState.TASK_FINISHED);
+                        } else {
+                            statusBuilder.setState(TaskState.TASK_FAILED);
+                        }
                     }
                 } catch (InterruptedException | IOException e) {
                     LOGGER.error("launchTask", e);
@@ -143,24 +151,45 @@ public class MyriadExecutor implements Executor {
         driver.sendStatusUpdate(status);
     }
 
-    private ProcessBuilder buildChangeOwnerShipProcessBuilder(NMTaskConfig taskConfig) {
-        String dir = taskConfig.getYarnEnvironment().get("YARN_HOME");
-        ProcessBuilder setSuid = new ProcessBuilder("chown -R",
-                taskConfig.getUser() + ":" + taskConfig.getGroup(),
-                dir);
-        setSuid.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-        setSuid.redirectError(ProcessBuilder.Redirect.INHERIT);
-        return setSuid;
+    private boolean changeOwnerShip(String directory, String user, String group) throws IOException, InterruptedException {
+        ProcessBuilder setSuidProcessBuilder = new ProcessBuilder("sudo", "/bin/chown", "-R", user + ":" + group, directory);
+        LOGGER.info(setSuidProcessBuilder.toString());
+        setSuidProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+        setSuidProcessBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+        Process setSuidProcess = setSuidProcessBuilder.start();
+        return setSuidProcess.waitFor() == 0;
     }
 
-    private ProcessBuilder buildSetPemissionsProcessBuilder(NMTaskConfig taskConfig) {
-        String dir = taskConfig.getYarnEnvironment().get("YARN_HOME");
-        ProcessBuilder setSuid = new ProcessBuilder("chmod", "g+rs", dir + "/bin/container-executor");
-        setSuid.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-        setSuid.redirectError(ProcessBuilder.Redirect.INHERIT);
-        return setSuid;
+    //Not particularly pleased I have to do this ...
+    private boolean setSuidBit(String directory) throws IOException, InterruptedException {
+        ProcessBuilder setPermsProcessBuilder = new ProcessBuilder("sudo", "/bin/chmod", "3050",
+                directory + "/bin/container-executor");
+        setPermsProcessBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+        setPermsProcessBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+        Process setPermsProcess = setPermsProcessBuilder.start();
+        return setPermsProcess.waitFor() == 0;
     }
-    
+
+    //@Todo: Discuss Java 7 as it makes changing POSIX file perms way easier, is it worth the dependency?
+    private boolean setPermissions(NMTaskConfig taskConfig) {
+        String directory = System.getProperty("user.dir") + "/" + taskConfig.getYarnEnvironment().get("YARN_HOME");
+        String user = taskConfig.getUser(); //really needs to be root so we set the sticky bit right.
+        String group = taskConfig.getGroup();
+        try {
+            if (changeOwnerShip(directory, user, group) &&
+                    changeOwnerShip(directory + "/bin/container-executor", "root", group) &&
+                    setSuidBit(directory)) {
+                permisionsSet = true;
+                return true;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     private ProcessBuilder buildProcessBuilder(TaskInfo task, NMTaskConfig taskConfig) {
         ProcessBuilder processBuilder = new ProcessBuilder("sudo", "-E", "-u", taskConfig.getUser(), "-H",
                 "bash", "-c", "$YARN_HOME/bin/yarn nodemanager");
