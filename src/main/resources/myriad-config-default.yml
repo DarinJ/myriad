@@ -29,8 +29,8 @@ executor:
   path: file://localhost/usr/local/libexec/mesos/myriad-executor-0.0.1.jar
   #The following should be uncommented if using a remotely distributed URI
   #remoteDistribution: true
-  #nodeManagerUri: file:///opt/hadoop-2.5.0.tar.gz
+  #nodeManagerUri: file:///dist/hadoop-2.5.0.tar.gz
   #command: myriad-executor-0.0.1.jar
 yarnEnvironment:
-  YARN_HOME: /opt/local/hadoop
+  YARN_HOME: /usr/local/hadoop
   #YARN_HOME: hadoop #this should be relative if remoteDistribution is set to true
