@@ -1,4 +1,4 @@
-mesosMaster: localhost:5050
+mesosMaster: 10.0.2.15:5050
 checkpoint: false
 frameworkFailoverTimeout: 43200000
 frameworkName: MyriadAlpha
@@ -32,5 +32,5 @@ executor:
   #nodeManagerUri: file:///opt/hadoop-2.5.0.tar.gz
   #command: myriad-executor-0.0.1.jar
 yarnEnvironment:
-  YARN_HOME: /opt/hadoop-2.5.0  
-  #YARN_HOME: hadoop-2.5.0 #this should be relative if remoteDistribution is set to true
+  YARN_HOME: /opt/local/hadoop
+  #YARN_HOME: hadoop #this should be relative if remoteDistribution is set to true
