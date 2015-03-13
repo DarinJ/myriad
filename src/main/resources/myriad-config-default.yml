@@ -21,14 +21,16 @@ rebalancer: false
 nodemanager:
   jvmMaxMemoryMB: 1024
   user: hduser
-  group:hadoop #only relevant if remoteDistribution is true
+  #group:hadoop #only relevant if remoteDistribution is true
   cpus: 0.2
   cgroups: false
 executor:
   jvmMaxMemoryMB: 256
   path: file://localhost/usr/local/libexec/mesos/myriad-executor-0.0.1.jar
-  remoteDistribution: true
-  nodeManagerUri: file:///opt/hadoop-2.5.0-cdh5.2.0.tar.gz
-  command: myriad-executor-0.0.1.jar
+  #The following should be uncommented if using a remotely distributed URI
+  #remoteDistribution: true
+  #nodeManagerUri: file:///opt/hadoop-2.5.0.tar.gz
+  #command: myriad-executor-0.0.1.jar
 yarnEnvironment:
-  YARN_HOME: hadoop-2.5.0-cdh5.2.0 #this should be relative if remoteDistribution is set to true
+  YARN_HOME: /opt/hadoop-2.5.0  
+  #YARN_HOME: hadoop-2.5.0 #this should be relative if remoteDistribution is set to true
