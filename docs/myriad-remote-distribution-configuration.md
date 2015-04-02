@@ -19,9 +19,9 @@ yarnEnvironment:
 
 It's strongly advised to set both FrameworkSuperUser and FrameworkUser.
 
-FrameworkSuperUser must exist on all slave nodes myriad can run on.  If FrameworkSuperUser is not specified it defaults to the user running the resource manager.
+`FrameworkSuperUser` must exist on all slave nodes myriad can run on.  If FrameworkSuperUser is not specified it defaults to the user running the resource manager.
 
-FrameworkUser must exist on all all slave nodes myriad can run on. If FrameworkSuperUser is not specified it defaults to the FrameworkSuper (but myriad executor is run as the user and not sudo).
+`FrameworkUser` must exist on all all slave nodes myriad can run on. If FrameworkSuperUser is not specified it defaults to the FrameworkSuper (but myriad executor is run as the user and not sudo).
 
 At this point you build myriad with the commands:
 ```Shell
