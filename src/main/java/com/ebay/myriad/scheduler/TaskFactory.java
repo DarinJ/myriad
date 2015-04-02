@@ -60,23 +60,36 @@ public interface TaskFactory {
 
         private Protos.CommandInfo getCommandInfo() {
             MyriadExecutorConfiguration myriadExecutorConfiguration = cfg.getMyriadExecutorConfiguration();
-            String cmdPrefix = "export CAPSULE_CACHE_DIR=`pwd`;echo $CAPSULE_CACHE_DIR; java -Dcapsule.log=verbose -jar ";
             CommandInfo.Builder commandInfo = CommandInfo.newBuilder();
             if (myriadExecutorConfiguration.getNodeManagerUri().isPresent()) {
+                LOGGER.info("Using remote distribution");
+                String cmdPrefix = "export CAPSULE_CACHE_DIR=`pwd`;echo $CAPSULE_CACHE_DIR; ";
+                if (cfg.getFrameworkUser().isPresent()) {
+                    cmdPrefix += "sudo -E -u " + cfg.getFrameworkUser().get() + " -H ";
+                }
+                cmdPrefix += "java -Dcapsule.log=verbose -jar ";
                 String nmURI = myriadExecutorConfiguration.getNodeManagerUri().get();
-                URI executorURI = URI.newBuilder().setValue(nmURI).setExtract(true).build();
-                //@Todo (DarinJ): determine if "root" or "" is the proper default, to keep backward compatiblility
-                //keeping root for now.  After resolving MESOS-1790 this gets set to "".
-                commandInfo.addUris(executorURI).setUser(myriadExecutorConfiguration.getUser().or("root"))
-                        .setValue(cmdPrefix + myriadExecutorConfiguration.getPath());
+                //todo(DarinJ) support other compression, as this is a temp fix for Mesos 1760 may not get to it.
+                String tarCmd = "sudo tar -zxpf " + getFileName(nmURI);
+                String chownCmd = "";
+                if (cfg.getFrameworkUser().isPresent()) {
+                    chownCmd += "sudo chown " + cfg.getFrameworkUser().get() + " .";
+                }
+                String cmd = tarCmd + "&&" + chownCmd + "&&" + cmdPrefix + myriadExecutorConfiguration.getPath();
+                LOGGER.info("Using remote distribution using command" + cmd);
+                URI executorURI = URI.newBuilder().setValue(nmURI).setExecutable(true).build();
+                commandInfo.addUris(executorURI).setUser(cfg.getFrameworkSuperUser().or(""))
+                        .setValue("echo \"cmd\";" + cmd);
             } else {
+                String cmdPrefix = " export CAPSULE_CACHE_DIR=`pwd` ;" +
+                        "echo $CAPSULE_CACHE_DIR; java -Dcapsule.log=verbose -jar ";
                 String executorPath = myriadExecutorConfiguration.getPath();
+                String cmd = cmdPrefix + getFileName(executorPath);
+                LOGGER.info("Using local distribution using command" + cmd);
                 URI executorURI = URI.newBuilder().setValue(executorPath)
                         .setExecutable(true).build();
-                //@Todo: determine if "root" or "" is the proper default, to keep backward compatiblility
-                //keeping root for now
-                commandInfo.addUris(executorURI).setUser(myriadExecutorConfiguration.getUser().or("root"))
-                        .setValue(cmdPrefix + getFileName(executorPath));
+                commandInfo.addUris(executorURI).setUser(cfg.getFrameworkUser().or(""))
+                        .setValue("echo \"cmd\";" + cmd);
             }
             return commandInfo.build();
         }
@@ -91,8 +104,6 @@ public interface TaskFactory {
             nmTaskConfig.setAdvertisableCpus(profile.getCpus());
             nmTaskConfig.setAdvertisableMem(profile.getMemory());
             NodeManagerConfiguration nodeManagerConfiguration = this.cfg.getNodeManagerConfiguration();
-            nmTaskConfig.setUser(nodeManagerConfiguration.getUser().orNull());
-            nmTaskConfig.setGroup(nodeManagerConfiguration.getGroup().or(YARN_DEFAULT_GROUP));
             nmTaskConfig.setJvmOpts(nodeManagerConfiguration.getJvmOpts().orNull());
             nmTaskConfig.setCgroups(nodeManagerConfiguration.getCgroups().or(Boolean.FALSE));
             nmTaskConfig.setYarnEnvironment(cfg.getYarnEnvironment());

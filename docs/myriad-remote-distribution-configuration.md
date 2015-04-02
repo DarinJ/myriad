@@ -10,22 +10,19 @@ First configure the Resource Manager as normal.
 
 In the myriad folder edit src/main/resources/myriad-config-default.  For standard configuration see myriad-configuration(myriad-configuration.md).  To enable remote binaray distribution you must set the following options:
 ```YAML
-nodemanager:  
-  user: hduser #This is the user the nodemanager runs as, if nodeManagerUri is present ownership will of YARN_HOME will be set to this user.
-  group:hadoop #If nodeManagerUri is present group ownership will of YARN_HOME will be set to this group and $YARN_HOME/bin/container-executor will be set g+rs
-  #Note both user and group must exist on all slaves.
 executor:  
   nodeManagerUri: hdfs://namenode:port/dist/hadoop-2.5.0.tar.gz  
   path: hadoop-2.5.0/share/hadoop/yarn/lib/myriad-executor-0.0.1.jar #this should be relative if nodeManagerUri is set
 yarnEnvironment:  
   YARN_HOME: hadoop-2.5.0 #this should be relative if nodeManagerUri is set  
 ```
-Also note if 
-```YAML
-executor:  
-    user: "notroot"
-```
-is set, the user must have passwordless sudo on all slave nodes myriad can run on.  
+
+It's strongly advised to set both FrameworkSuperUser and FrameworkUser.
+
+FrameworkSuperUser must exist on all slave nodes myriad can run on.  If FrameworkSuperUser is not specified it defaults to the user running the resource manager.
+
+FrameworkUser must exist on all all slave nodes myriad can run on. If FrameworkSuperUser is not specified it defaults to the FrameworkSuper (but myriad executor is run as the user and not sudo).
+
 At this point you build myriad with the commands:
 ```Shell
 ./gradlew build  
