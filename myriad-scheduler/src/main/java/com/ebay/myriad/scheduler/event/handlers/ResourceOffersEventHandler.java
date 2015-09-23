@@ -26,7 +26,8 @@ import com.ebay.myriad.state.NodeTask;
 import com.ebay.myriad.state.SchedulerState;
 import com.lmax.disruptor.EventHandler;
 
-import java.util.Iterator;
+import java.util.*;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.Offer;
@@ -40,11 +41,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -55,6 +51,12 @@ public class ResourceOffersEventHandler implements EventHandler<ResourceOffersEv
   private static final Logger LOGGER = LoggerFactory.getLogger(ResourceOffersEventHandler.class);
 
   private static final Lock driverOperationLock = new ReentrantLock();
+
+  private static final String RESOURCES_CPU_KEY = "cpus";
+  private static final String RESOURCES_MEM_KEY = "mem";
+  private static final String RESOURCES_PORTS_KEY = "ports";
+  private static final String RESOURCES_DISK_KEY = "disk";
+
 
   @Inject
   private SchedulerState schedulerState;
@@ -147,13 +149,13 @@ public class ResourceOffersEventHandler implements EventHandler<ResourceOffersEv
             resource.getName());
       }
     }
-    double cpus = (Double) results.get("cpus");
-    double mem = (Double) results.get("mem");
-    int ports = (Integer) results.get("ports");
+    double cpus = (Double) Optional.ofNullable(results.get(RESOURCES_CPU_KEY)).orElse(-1);
+    double mem = (Double) Optional.ofNullable(results.get(RESOURCES_MEM_KEY)).orElse(-1);
+    int ports = (Integer) Optional.ofNullable(results.get(RESOURCES_PORTS_KEY)).orElse(-1);
 
-    checkResource(cpus < 0, "cpus");
-    checkResource(mem < 0, "mem");
-    checkResource(ports < 0, "port");
+    checkResource(cpus < 0, RESOURCES_CPU_KEY);
+    checkResource(mem < 0, RESOURCES_MEM_KEY);
+    checkResource(ports < 0, RESOURCES_PORTS_KEY);
 
     return checkAggregates(offer, profile, ports, cpus, mem);
   }
@@ -163,6 +165,7 @@ public class ResourceOffersEventHandler implements EventHandler<ResourceOffersEv
       LOGGER.info("No " + resource + " resources present");
     }
   }
+
 
   private boolean checkAggregates(Offer offer, NMProfile profile, int ports, double cpus, double mem) {
     Map<String, String> requestAttributes = new HashMap<>();
@@ -198,21 +201,23 @@ public class ResourceOffersEventHandler implements EventHandler<ResourceOffersEv
 
   static {
     resourceEvaluators = new HashMap<String, EvalResources>(4);
-    resourceEvaluators.put("cpus", new EvalResources() {
+    resourceEvaluators.put(RESOURCES_CPU_KEY, new EvalResources() {
       public void eval(Resource resource, Map<String, Object> results) {
-        results.put("cpus", scalarToDouble(resource, "cpus"));
+        results.put(RESOURCES_CPU_KEY, (Double) Optional.ofNullable(results.get(RESOURCES_CPU_KEY)).orElse(0) +
+                scalarToDouble(resource, RESOURCES_CPU_KEY));
       }
     });
-    resourceEvaluators.put("mem", new EvalResources() {
+    resourceEvaluators.put(RESOURCES_CPU_KEY, new EvalResources() {
       public void eval(Resource resource, Map<String, Object> results) {
-        results.put("mem", scalarToDouble(resource, "mem"));
+        results.put(RESOURCES_MEM_KEY, (Double) Optional.ofNullable(results.get(RESOURCES_MEM_KEY)).orElse(0) +
+                scalarToDouble(resource, RESOURCES_MEM_KEY));
       }
     });
-    resourceEvaluators.put("disk", new EvalResources() {
+    resourceEvaluators.put(RESOURCES_DISK_KEY, new EvalResources() {
       public void eval(Resource resource, Map<String, Object> results) {
       }
     });
-    resourceEvaluators.put("ports", new EvalResources() {
+    resourceEvaluators.put(RESOURCES_PORTS_KEY, new EvalResources() {
       public void eval(Resource resource, Map<String, Object> results) {
         int ports = 0;
         if (resource.getType().equals(Value.Type.RANGES)) {
@@ -228,7 +233,8 @@ public class ResourceOffersEventHandler implements EventHandler<ResourceOffersEv
               .getType().toString());
 
         }
-        results.put("ports", Integer.valueOf(ports));
+        results.put(RESOURCES_PORTS_KEY, (Integer) Optional.ofNullable(results.get(RESOURCES_PORTS_KEY)).orElse(0) +
+                Integer.valueOf(ports));
       }
     });
   }
