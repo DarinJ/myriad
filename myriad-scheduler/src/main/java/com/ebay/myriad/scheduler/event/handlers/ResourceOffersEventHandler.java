@@ -25,8 +25,14 @@ import com.ebay.myriad.scheduler.fgs.OfferLifecycleManager;
 import com.ebay.myriad.state.NodeTask;
 import com.ebay.myriad.state.SchedulerState;
 import com.lmax.disruptor.EventHandler;
+import com.google.common.base.Optional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.mesos.Protos;
@@ -149,9 +155,9 @@ public class ResourceOffersEventHandler implements EventHandler<ResourceOffersEv
             resource.getName());
       }
     }
-    double cpus = (Double) Optional.ofNullable(results.get(RESOURCES_CPU_KEY)).orElse(-1);
-    double mem = (Double) Optional.ofNullable(results.get(RESOURCES_MEM_KEY)).orElse(-1);
-    int ports = (Integer) Optional.ofNullable(results.get(RESOURCES_PORTS_KEY)).orElse(-1);
+    double cpus = (Double) Optional.fromNullable(results.get(RESOURCES_CPU_KEY)).or(-1);
+    double mem = (Double) Optional.fromNullable(results.get(RESOURCES_MEM_KEY)).or(-1);
+    int ports = (Integer) Optional.fromNullable(results.get(RESOURCES_PORTS_KEY)).or(-1);
 
     checkResource(cpus < 0, RESOURCES_CPU_KEY);
     checkResource(mem < 0, RESOURCES_MEM_KEY);
@@ -203,13 +209,13 @@ public class ResourceOffersEventHandler implements EventHandler<ResourceOffersEv
     resourceEvaluators = new HashMap<String, EvalResources>(4);
     resourceEvaluators.put(RESOURCES_CPU_KEY, new EvalResources() {
       public void eval(Resource resource, Map<String, Object> results) {
-        results.put(RESOURCES_CPU_KEY, (Double) Optional.ofNullable(results.get(RESOURCES_CPU_KEY)).orElse(0) +
+        results.put(RESOURCES_CPU_KEY, (Double) Optional.fromNullable(results.get(RESOURCES_CPU_KEY)).or(0) +
                 scalarToDouble(resource, RESOURCES_CPU_KEY));
       }
     });
     resourceEvaluators.put(RESOURCES_CPU_KEY, new EvalResources() {
       public void eval(Resource resource, Map<String, Object> results) {
-        results.put(RESOURCES_MEM_KEY, (Double) Optional.ofNullable(results.get(RESOURCES_MEM_KEY)).orElse(0) +
+        results.put(RESOURCES_MEM_KEY, (Double) Optional.fromNullable(results.get(RESOURCES_MEM_KEY)).or(0) +
                 scalarToDouble(resource, RESOURCES_MEM_KEY));
       }
     });
@@ -233,7 +239,7 @@ public class ResourceOffersEventHandler implements EventHandler<ResourceOffersEv
               .getType().toString());
 
         }
-        results.put(RESOURCES_PORTS_KEY, (Integer) Optional.ofNullable(results.get(RESOURCES_PORTS_KEY)).orElse(0) +
+        results.put(RESOURCES_PORTS_KEY, (Integer) Optional.fromNullable(results.get(RESOURCES_PORTS_KEY)).or(0) +
                 Integer.valueOf(ports));
       }
     });
